@@ -1,0 +1,36 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+enum Role { ADMIN RECEPTIONIST TRAINER STUDENT }
+enum PaymentStatus { PENDING PAID FAILED OVERDUE }
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String?
+  fullName      String
+  role          Role     @default(STUDENT)
+  photoUrl      String?
+  weight        Float?
+  height        Float?
+  goal          String?
+  bodyFat       Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  metrics       Metric[]
+  checkins      Checkin[]
+  payments      Payment[]
+  schedules     Schedule[]
+  messagesSent  Message[] @relation("sender")
+  messagesRecvd Message[] @relation("receiver")
+}
+model Plan { id String @id @default(cuid()) name String priceCents Int interval String users User[] }
+model Payment { id String @id @default(cuid()) userId String planId String? provider String status PaymentStatus amountCents Int dueDate DateTime paidAt DateTime? user User @relation(fields:[userId],references:[id]) }
+model Workout { id String @id @default(cuid()) title String description String? muscleGroup String createdById String? exercises WorkoutExercise[] }
+model Exercise { id String @id @default(cuid()) name String description String? videoUrl String? muscleGroup String workouts WorkoutExercise[] }
+model WorkoutExercise { id String @id @default(cuid()) workoutId String exerciseId String sets Int reps Int restSeconds Int order Int workout Workout @relation(fields:[workoutId],references:[id]) exercise Exercise @relation(fields:[exerciseId],references:[id]) }
+model Checkin { id String @id @default(cuid()) userId String timestamp DateTime @default(now()) user User @relation(fields:[userId],references:[id]) }
+model Notification { id String @id @default(cuid()) userId String? title String body String type String sentAt DateTime? }
+model Metric { id String @id @default(cuid()) userId String weight Float? bodyFat Float? calories Int? capturedAt DateTime @default(now()) user User @relation(fields:[userId],references:[id]) }
+model Message { id String @id @default(cuid()) senderId String receiverId String content String createdAt DateTime @default(now()) sender User @relation("sender", fields:[senderId], references:[id]) receiver User @relation("receiver", fields:[receiverId], references:[id]) }
+model Schedule { id String @id @default(cuid()) userId String trainerId String? type String startsAt DateTime endsAt DateTime status String user User @relation(fields:[userId], references:[id]) }
